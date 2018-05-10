@@ -1,0 +1,684 @@
+﻿@{
+    ViewBag.Title = "Record Audio";
+}
+
+<head>
+    <script src="~/Scripts/jquery-ui.min.js"></script>
+    <script src="~/Scripts/recorder.js"></script>
+<style>
+    * {
+        font-family: Verdana, Arial, sans-serif;
+    }
+
+    #recordingslist a:link {
+        color: #000;
+        text-decoration: none;
+    }
+
+    #recordingslist a:visited {
+        color: #000;
+    }
+
+    #recordingslist a:hover {
+        color: #000;
+    }
+
+   
+
+    .final {
+        color: black;
+        padding-right: 3px;
+    }
+
+    .interim {
+        color: gray;
+    }
+
+    .info {
+        font-size: 14px;
+        text-align: center;
+        color: #777;
+        display: none;
+    }
+
+    .right {
+        float: right;
+    }
+
+    .sidebyside {
+        display: inline-block;
+        width: 45%;
+        min-height: 40px;
+        text-align: left;
+        vertical-align: top;
+    }
+
+    #headline {
+        font-size: 40px;
+        font-weight: 300;
+    }
+
+    #info {
+        font-size: 20px;
+        text-align: center;
+        color: #777;
+        visibility: hidden;
+    }
+
+    #results {
+        font-size: 14px;
+        font-weight: bold;
+        border: 1px solid #ddd;
+        padding: 15px;
+        text-align: left;
+            margin-left: 2%;
+            width: 90%;
+            background-color: white;
+            overflow: auto;
+            height: 385px;
+        min-height: 150px;
+            /*margin-bottom: 1%;*/
+    }
+
+    #start_button {
+        border: 0;
+        background-color: transparent;
+        padding: 0;
+    }
+    #pause_button {
+        border: 0;
+        background-color: transparent;
+        padding: 0;
+    }
+    #stop_button {
+        border: 0;
+        background-color: transparent;
+        padding: 0;
+    }
+    #lblRecording
+    {
+        margin-left:20px;
+    } 
+    #start_img {
+        width: 30px;
+        height: 30px;
+    }
+    #pause_img {
+        width: 30px;
+        height: 30px;
+    }
+    #stop_img {
+        width: 30px;
+        height: 30px;
+    }
+    #micstatus {
+            font-size: 14px;
+            padding: 2%;
+    }
+
+    #micInputDiv {
+            padding: 2%;
+    }
+
+        #liveTranscribeDiv {
+            border: 1px solid white;
+            margin-left: 25%;
+            width: 70%;
+    }
+
+    #btnSave {
+            margin-bottom: 2%;
+            margin-left: 2%;
+    }
+    #btnMerge {
+        margin-bottom: 2%;
+        margin-left: 2%;
+    }
+        #TranscribeTitle {
+            padding-left: 2%;
+    }
+</style>
+    <script>
+        var videoName = "";
+        var newAudioName = "";
+       var videoId = 0;
+        $(document).ready(function () {
+            $("<div id='overlaySaveAudio'><div id='LoadingImageSaveAudio'><span id='spanLoadingDiv'><img id='Loading1' src=\"../../Content/loading.gif\"; width=22;height=6  />&nbsp; Saving...</span></div></div>").appendTo($('html'));
+            $('#liveTranscribeDiv').hide();
+            $('#submit').attr('disabled', true);
+            $('#ddlVideos').attr('disabled', true);
+            $('#newAudioName').attr('disabled', true);
+            $('#newAudioName').val('');
+            $("#Message").html("");
+            $('#btnSave').attr('disabled', true);
+            $('#btnMerge').attr('disabled', true);
+            $('#results').attr('readonly', true);
+            $('#rdSelectVideo').click(function () {
+                $('#newAudioName').val('');
+                $('#results').text('');
+                $('#submit').attr('disabled', true);
+                $('#liveTranscribeDiv').hide();
+                $('#ddlVideos').attr('disabled', false);
+                $('#newAudioName').attr('disabled', true);
+                $("#Message").html("");
+            });
+            $('#rdNewAudio').click(function () {
+                $('#results').text('');
+                $('#ddlVideos').prop('selectedIndex', 0);
+                $('#liveTranscribeDiv').hide();
+                $('#newAudioName').attr('disabled', false);
+                $('#ddlVideos').attr('disabled', true);
+                $('#submit').attr('disabled', false);
+                $('#btnMerge').attr('disabled', true);
+                $("#Message").html("");
+            });     
+            $('#submit').click(function () {
+                //$('#results').val('');
+                if ($('#newAudioName').val().length == 0 && $('#rdNewAudio').is(':checked')) {
+                    $('#Message').show();
+                    $('#Message').html("Please enter the Name of the file.");
+                    $('#Message').css('color', 'red');
+                }
+                else {
+                    $("#Message").html("");
+                    $('#liveTranscribeDiv').show();
+                    $('#lblRecording').hide();
+                    $("#recordingslist").empty();
+                    $('#results').attr('readonly', true);
+                }
+            });
+
+            $('#ddlVideos').change(function () {
+                videoName = $('option:selected', $(this)).text();
+                $("#recordingslist").empty();
+                $('#lblRecording').hide();
+                videoId = $('option:selected', $(this)).val();
+                if (videoName != "--Select--") {
+             
+                    $('#submit').attr('disabled', false);
+                    $('#btnSave').attr('disabled', false);
+                    $('#btnMerge').attr('disabled', false);
+                }
+
+                else {
+                    $('#submit').attr('disabled', true);
+                    $('#btnSave').attr('disabled', true);
+                    $('#btnMerge').attr('disabled', true);
+                }
+            }).change();
+
+            $('#newAudioName').keyup(function () {
+                if ($(this).val().length != 0) {
+                    $("#Message").html("");
+                    $('#btnSave').attr('disabled', false);
+                }
+                else
+                    $('#btnSave').attr('disabled', true);
+            })
+
+        });
+    </script>
+
+</head>
+
+<body>
+    <h2>Transcribe Audio</h2>
+    <div id="TranscribeOptionDiv">
+        <div id="Message" style="height:auto;font-size:small"></div>
+        <br />
+        <table id="tblTranscribe">
+            <tr>
+                <td>
+                    <input type="radio" name="TranscribeOptionType" value="ExistingVideo" id="rdSelectVideo" required />&nbsp;&nbsp;&nbsp;&nbsp;
+                </td>
+                <td>
+                    <label class="textual">Select related Video : </label>
+                </td>
+                <td>
+                    @Html.DropDownList("Videos", (SelectList)ViewBag.Videos, "--Select--", new { @id = "ddlVideos", @class = "imageFileText" })
+                </td>
+            </tr>
+            <tr>
+                <td id="rdNewAudiotd">
+                    <input type="radio" name="TranscribeOptionType" value="NewAudio" id="rdNewAudio" required />
+                </td>
+                <td>
+                    <label class="textual">Record new Audio :</label>&nbsp;&nbsp;
+                </td>
+                <td id="Transcribetd">
+                    <input type="text" name="newAudio" id="newAudioName" placeholder="Enter Audio name" style="color: black; width: 400px; height:20px; font-size:1.5em" />
+                </td>
+            </tr>
+        </table>
+        <div class="homebutton">
+            <input type="submit" name="Search" value="Go" id="submit" class="btn btn-success btn-sm" />
+        </div>
+    </div>
+    <br />
+<div id="liveTranscribeDiv">
+    <div id="micInputDiv">
+        <button id="start_button" onclick="startButton(event)">
+            <img title="Start Recording" id="start_img" src="../Content/Images/Record1.png" alt="Start">
+        </button>
+        &nbsp;&nbsp;
+        <button id="pause_button" onclick="pauseButton(event)">
+            <img id="pause_img" title="Pause Recording" src="../Content/Images/pause1.png" alt="Pause">
+            &nbsp;&nbsp;
+            </button>
+            <button id="stop_button" onclick="stopButton(event)">
+                <img id="stop_img" title="Stop Recording" src="../Content/Images/Stop1.png" alt="Pause">
+        </button>
+        <span id="micstatus">Click on Record to start....</span>
+    </div>
+    <h4 id="TranscribeTitle">Transcribed Text</h4>
+    @*<div id="results">
+        <span id="final_span" class="final"></span>
+        <span id="interim_span" class="interim"></span>
+    </div>*@
+    <textarea id="results"></textarea>
+    <br/>
+    <br/>
+    <h4 id="lblRecording">  Recordings</h4>
+    <ul id="recordingslist"></ul>
+    <input type="button" id="btnSave" value="Save" class="btn btn-success btn-sm" onclick="SaveAudio()" />
+    <input type="button" id="btnMerge" value="Merge with Video" class="btn btn-success btn-sm" onclick="SaveVideo()" />
+    <div id="Messagetemp"></div>
+</div>
+</body>
+
+<script>  
+    $('#stop_button').attr('disabled', true);
+    $('#pause_button').attr('disabled', true);
+    $('#start_button').attr('disabled', false);
+    $('#lblRecording').hide();
+    var audio_context;
+    var recorder;
+    var recording;
+    var pause;
+    var oldlength=0;
+    var status = "true";
+    var timestamp = 0;
+    var timeStampObj = {};
+    var timeStampArray = [];
+    var final_transcript = '';
+    var interim_transcript = '';
+    var recognizing = false;
+    var ignore_onend;
+    var start_timestamp;
+
+
+    function startUserMedia(stream) {
+        var input = audio_context.createMediaStreamSource(stream);
+
+        // Uncomment if you want the audio to feedback directly
+        //input.connect(audio_context.destination);
+        //__log('Input connected to audio context destination.');  
+        recorder = new Recorder(input);
+    }
+
+    function startRecording() {
+        recorder && recorder.record();
+        timeStampArray = [];
+        timestamp = 0;
+        timeStampArray.push({ EndTime: timestamp, Sentence: " " });
+        startTimer();
+    }
+
+    function stopRecording() {
+        recorder && recorder.stop();
+        // create WAV download link using audio data blob
+        createDownloadLink();
+        recorder.clear();
+        clearInterval(myFunc);
+        //console.log("timer on stoping the recording: " + timestamp);
+       // start_img.src = '../Content/Images/Record1.png';
+        $('#micstatus').html("Click on the Record icon and begin speaking.");
+    }
+
+
+    function createDownloadLink() {
+        recorder && recorder.exportWAV(function (blob) {
+            var url = URL.createObjectURL(blob);
+            var li = document.createElement('li');
+            var au = document.createElement('audio');
+            var hf = document.createElement('a');   
+            au.controls = true;
+            au.src = url;
+            hf.href = url;
+            hf.download = new Date().toISOString() + '.wav';
+            hf.innerHTML = hf.download;
+            recording = blob;
+         
+            li.appendChild(au);
+            li.appendChild(hf);
+            $("#recordingslist").empty();
+            recordingslist.appendChild(li);
+            $('#lblRecording').show();
+        });
+    }
+
+    window.onload = function init() {
+        try {
+            // webkit shim
+            window.AudioContext = window.AudioContext || window.webkitAudioContext;
+            navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia;
+            window.URL = window.URL || window.webkitURL;    
+            audio_context = new AudioContext;
+            navigator.getUserMedia({ audio: true }, startUserMedia, function (e) {
+            });
+        } catch (e) {
+            alert('Current browser does not support this functionality, please use chrome version 25.0 or above');
+        }   
+        
+    };
+
+ 
+
+if (!('webkitSpeechRecognition' in window)) {
+  //upgrade();
+} else {
+  start_button.style.display = 'inline-block';
+  var recognition = new webkitSpeechRecognition();
+  recognition.continuous = true;
+  recognition.interimResults = true;
+    recognition.onstart = function () {
+    recognizing = true;
+    $('#micstatus').html("Speak Now");
+       // start_img.src = '../Content/Images/Stop1.png';
+  };
+
+  recognition.onerror = function (event) {
+      if (event.error == 'no-speech') {
+         // start_img.src = '../Content/Images/Record1.png';
+          $('#micstatus').html("No speech was detected. You may need to adjust your microphone settings.");
+
+          ignore_onend = true;
+      }
+      if (event.error == 'audio-capture') {
+          //start_img.src = '../Content/Images/Record1.png';
+
+          $('#micstatus').html("No microphone was found. Ensure that a microphone is installed ");
+          ignore_onend = true;
+      }
+      if (event.error == 'not-allowed') {
+          if (event.timeStamp - start_timestamp < 100) {
+              $('#micstatus').html("Permission to use microphone is blocked. To change,go to chrome://settings/contentExceptions#media-stream");
+          } else
+              $('#micstatus').html("Permission to use microphone was denied.");
+      }
+      //start_img.src = '../Content/Images/Record1.png';
+      ignore_onend = true;
+  };
+
+  recognition.onend = function () {
+    if (ignore_onend) {
+      return;
+    }
+    
+    if (status == "false")
+    {
+        return;
+    }
+    pause = "true";
+    recognizing = false;
+    $('#stop_button').attr('disabled', true);
+    $('#pause_button').attr('disabled',true);
+    $('#start_button').attr('disabled', false);
+  //  start_img.src = '../Content/Images/Record1.png';
+    pause_img.src = '../Content/Images/pause1.png';
+        $('#micstatus').html("Click on the Record icon and begin speaking.");
+        if (!final_transcript || interim_transcript) {
+      return;
+    }
+
+  };
+
+  recognition.onresult = function (event) {
+        //console.log($.now());
+      var interim_transcript = '';
+      for (var i = event.resultIndex; i < event.results.length; ++i) {
+          if (event.results[i].isFinal) {
+              final_transcript += event.results[i][0].transcript;
+              timeStampObj = {};
+              timeStampObj["EndTime"] = timestamp;
+              timeStampObj["Sentence"] = event.results[i][0].transcript;
+              timeStampArray.push(timeStampObj);
+              //console.log(timestamp);
+              //console.log(event.results[i][0].transcript);
+          } else {
+              interim_transcript += event.results[i][0].transcript;
+          }
+      }
+      final_transcript = capitalize(final_transcript);
+        results.innerHTML = linebreak(final_transcript) + linebreak(interim_transcript);
+     // result.innerHTML = linebreak(interim_transcript);
+      if (final_transcript || interim_transcript) {
+          showButtons('inline-block');
+      }
+  };
+
+  window.setInterval(function () {
+      if ($('#results').val().length == oldlength && status == "false") {
+        //  alert("done");
+          //  recognizing = false;    
+          //console.log(timestamp + "  second till silence");
+          timeStampObj = {};
+          timeStampObj["EndTime"] = timestamp;
+          timeStampObj["Sentence"] = " ";
+          timeStampArray.push(timeStampObj);
+          recognition.start();
+          recognizing = true;
+          final_transcript += " ";
+      }
+      oldlength = $('#results').val().length;
+      /// call your function here
+  }, 10000);
+    
+function upgrade() {
+  start_button.style.visibility = 'hidden';
+    //showInfo('info_upgrade');
+  $('#micstatus').html("Current browser does not support this functionality, please use chrome version 25.0 or above");
+}
+
+var two_line = /\n\n/g;
+var one_line = /\n/g;
+function linebreak(s) {
+  return s.replace(two_line, '<p></p>').replace(one_line, '<br>');
+}
+
+var first_char = /\S/;
+function capitalize(s) {
+        return s.replace(first_char, function (m) { return m.toUpperCase(); });
+}
+
+function startButton(event) {
+    $('audio').each(function () {
+        this.pause(); // Stop playing
+        this.currentTime = 0; // Reset time
+    });
+
+  startRecording();
+  $('#results').attr('readonly', true);
+  final_transcript = '';
+  recognition.lang = 'en-US';
+  recognition.start();
+  status = "false";
+  ignore_onend = false;
+  pause = "false"
+ // start_img.src = '../Content/Images/Stop1.png';
+  pause.src = '../Content/Images/pause1.png';
+  $('#stop_button').attr('disabled', false);
+  $('#pause_button').attr('disabled', false);
+  $('#start_button').attr('disabled', true);
+  $('#micstatus').html("Click the 'Allow' button above to enable your microphone.");
+  showButtons('none');
+  start_timestamp = event.timeStamp;
+}
+function stopButton(event) {
+
+    if (recognizing && status == "false") {
+        status = "true";
+        recognition.stop();
+        stopRecording();
+        $('#results').attr('readonly', false);
+        $('#results').innerHTML = "";
+        return;
+    }
+}
+
+function pauseButton(event) {
+    if (pause!="true") {
+        recorder && recorder.stop();
+        recognition.stop();
+        pause_img.src = '../Content/Images/Resume.png';
+        pause_img.title = 'Resume Recording';
+        $('#micstatus').html("Recording Paused.Click on Resume button to resume Recording.");
+        pause = "true"
+    }
+    else
+    {
+        recorder && recorder.record();
+        recognition.start();
+        pause_img.src = '../Content/Images/pause1.png';
+        pause_img.title = 'Pause Recording';
+      //  start_img.src = '../Content/Images/Stop1.png';
+        pause = "false"
+        final_transcript += " ";
+        $('#micstatus').html("Speak Now.");
+    }
+}
+
+
+var myFunc;
+function startTimer() {
+    myFunc = setInterval(function () {
+        timestamp++;
+    }, 1000);
+};
+
+
+function SaveAudio() {
+    if (recognizing && status == "false") {
+        status = "true";
+        recognition.stop();
+    stopRecording();
+    }
+    setTimeout(function () {
+    //console.log("Call to Controller");
+        if ($('#results').val() != null && $('#results').val() != ' ' && $('#results').val() != '') {
+    if ($('#rdNewAudio').is(':checked')) {
+        newAudioName = $('#newAudioName').val();
+        videoId = 0;
+       // alert(videoId + "  " + newAudioName);
+    }
+    else if ($('#rdSelectVideo').is(':checked')) {
+        newAudioName = '';
+       // alert(videoId + "  " + newAudioName);
+    }
+    timestampValues = JSON.stringify(timeStampArray);
+    var oReq = new XMLHttpRequest();
+    oReq.open("POST", "/AudioRecoder/SaveAudioTranscription/", true);
+    var fd = new FormData();
+    fd.append("file", recording);
+    fd.append('timeStampList', timestampValues);
+    fd.append("filename", newAudioName + ".wav");
+    fd.append("existingVideoId", videoId);
+    fd.append("addedText", $('#results').val())
+    oReq.onload = function (oEvent) {
+    };
+    oReq.send(fd);
+    $('#overlaySaveAudio').show();
+    oReq.addEventListener("load", function (event) {
+        var parseJson = jQuery.parseJSON(event.target.response);
+            $('#Message').show();
+            $('#Message').html(parseJson.message.toString());
+            $('#Message').css('color', 'green');
+            $('#overlaySaveAudio').hide();
+    }, false);
+    }
+        else {
+        $('#Message').show();
+        $('#Message').html("Transcribed text is null, please try again.");
+        $('#Message').css('color', 'red');
+    }
+    }, 3000);
+};
+
+//function GetTimestampProcessed() {
+//    console.log(timeStampArray);
+//    things = JSON.stringify({ 'timeStampList': timeStampArray });
+//    $.ajax({
+//        contentType: 'application/json; charset=utf-8',
+//        url: "/Home/ProcessTimestampArray",
+//        type: "POST",
+//        data: things,
+//        datatype: "json",
+//        success: function (data) {
+//            alert("success");
+//            alert(data);
+//        },
+//        error: function (e) {
+//            alert("failed");
+//        }
+//    })
+//};
+   
+
+function SaveVideo() {
+    if (recognizing && status == "false") {
+        status = "true";
+        recognition.stop();
+        stopRecording();
+    }
+    setTimeout(function () {
+    if ($('#results').val() != null && $('#results').val() != ' ' && $('#results').val() != '') {
+        if ($('#rdNewAudio').is(':checked')) {
+            newAudioName = $('#newAudioName').val();
+            videoId = 0;
+            // alert(videoId + "  " + newAudioName);
+        }
+        else if ($('#rdSelectVideo').is(':checked')) {
+            newAudioName = '';
+            // alert(videoId + "  " + newAudioName);
+        }
+        timestampValues = JSON.stringify(timeStampArray);
+        var oReq = new XMLHttpRequest();
+        oReq.open("POST", "/AudioRecoder/SaveVideo/", true);
+        var fd = new FormData();
+       // alert(recording.length);
+        fd.append("file", recording);
+        fd.append("filename", "test1.wav");
+        fd.append('timeStampList', timestampValues);
+        fd.append("existingVideoId", videoId);
+        fd.append("addedText", $('#results').val())
+        oReq.onload = function (oEvent) {
+        };
+        oReq.send(fd);
+        $('#overlaySaveAudio').show();
+        oReq.addEventListener("load", function (event) {
+            var parseJson = jQuery.parseJSON(event.target.response);
+            $('#Message').show();
+            $('#Message').html(parseJson.message.toString());
+            $('#Message').css('color', 'green');
+            $('#overlaySaveAudio').hide();
+        }, false);
+    }
+    else {
+        $('#Message').show();
+        $('#Message').html("Transcribed text is null, please try again.");
+        $('#Message').css('color', 'red');
+    }
+    }, 1000);
+};
+var current_style;
+function showButtons(style) {
+  if (style == current_style) {
+    return;
+  }
+  current_style = style;
+}
+}
+</script>
+
+
+
